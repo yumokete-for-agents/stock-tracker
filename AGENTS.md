@@ -4,26 +4,37 @@
 
 Flutter app autónoma que descarga precios de acciones desde Yahoo Finance. Sin backend.
 
+## GitHub
+
+- **Repo**: https://github.com/yumokete-for-agents/stock-tracker
+- **CI/CD**: GitHub Actions (flutter.yml) - Build APK en cada push
+
 ## Structure
 
 ```
 frontend/
 ├── lib/
-│   ├── main.dart           # Entry point
-│   ├── models/stock.dart   # Stock data model
+│   ├── main.dart                    # Entry point
+│   ├── models/
+│   │   ├── stock.dart            # Datos de precio
+│   │   ├── stock_fundamentals.dart  # PE, P/B, EPS, Beta, etc.
+│   │   └── stock_snapshot.dart   # Snapshot + histórico con timestamps
 │   ├── services/
 │   │   ├── stock_service.dart    # Yahoo Finance API
-│   │   └── storage_service.dart  # Local persistence
-│   ├── screens/home_screen.dart  # Main screen
-│   └── widgets/stock_card.dart   # Stock display widget
-├── pubspec.yaml             # Dependencies
-└── test/                    # Tests
+│   │   └── storage_service.dart # Persistencia + histórico (30 snapshots)
+│   ├── screens/
+│   │   └── home_screen.dart    # UI principal
+│   └── widgets/
+│       ├── stock_card.dart
+│       └── fundamentals_panel.dart
+├── pubspec.yaml
+└── test/
 ```
 
 ## Commands
 
 ```bash
-# Install dependencies
+# Install dependencies (Flutter local)
 cd frontend && flutter pub get
 
 # Run app
@@ -33,32 +44,40 @@ cd frontend && flutter run
 cd frontend && flutter test
 
 # Build APK
-cd frontend && flutter build apk --release
+cd frontend && flutter build apk --debug --release
+
+# Flutter analyze
+cd frontend && flutter analyze
 ```
 
 ## Dependencies
 
-- `yahoofin` - Yahoo Finance API
-- `shared_preferences` - Local storage for ticker list
+- `yahoofin: ^0.2.0` - Yahoo Finance API
+- `shared_preferences: ^2.2.3` - Persistencia local
+
+## Fundamentales (guardados con timestamp)
+
+| Campo | Descripción |
+|-------|-----------|
+| trailingPE | P/E actual |
+| forwardPE | P/E forward |
+| priceToBook | P/B |
+| epsTrailing | EPS (TTM) |
+| epsForward | EPS forward |
+| beta | Beta |
+| dividendYield | Dividend Yield % |
+| marketCap | Market Cap |
+| fiftyTwoWeekHigh/Low | 52W High/Low |
 
 ## Key Facts
 
-- Flutter requiere instalación local (`brew install flutter` o flutter.dev)
-- La app es autónoma - NO necesita backend
-- Tickers se guardan localmente con shared_preferences
-- Usa Material Design 3
-- Subagentes especializados en `opencode.json`: `flutter-expert`, `ui-designer`
+- Flutter requiere instalación local
+- App autónoma - NO necesita backend
+- Tickers guardados en shared_preferences
+- Histórico: hasta 30 snapshots por ticker
+- GitHub Actions compila APK automáticamente
 
-## CI/CD (GitHub Actions)
+## Subagentes (opencode.json)
 
-```bash
-# El workflow está en .github/workflows/flutter.yml
-# Se ejecuta automáticamente en push/PR a main
-# Sube APK como artifact: app-debug.apk
-```
-
-## Development Notes
-
-- Verificar `pubspec.yaml` antes de añadir nuevas dependencias
-- Los tests están en `frontend/test/`
-- Para añadir nuevos packages: `flutter pub add <package>`
+- `flutter-expert`: Desarrollo Flutter/Dart
+- `ui-designer`: Diseño UI/UX
