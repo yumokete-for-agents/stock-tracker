@@ -38,10 +38,10 @@ class FundamentalsPanel extends StatelessWidget {
               _RatioItem('EPS Fwd', fundamentals.epsForward),
               _RatioItem('Beta', fundamentals.beta),
               _RatioItem('Div. Yield', fundamentals.dividendYield, suffix: '%'),
-              _RatioItem('MCap', _formatMarketCap(fundamentals.marketCap)),
+              _RatioItemText('MCap', _formatMarketCap(fundamentals.marketCap)),
               _RatioItem('52W High', fundamentals.fiftyTwoWeekHigh),
               _RatioItem('52W Low', fundamentals.fiftyTwoWeekLow),
-              _RatioItem('Vol (3M)', _formatVolume(fundamentals.avgVolume)),
+              _RatioItemText('Vol (3M)', _formatVolume(fundamentals.avgVolume)),
             ],
           ),
           if (expanded) ...[
@@ -97,6 +97,30 @@ class _RatioItem extends StatelessWidget {
         ),
         Text(
           '$display$suffix',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+}
+
+class _RatioItemText extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _RatioItemText(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+        ),
+        Text(
+          value,
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
         ),
       ],
