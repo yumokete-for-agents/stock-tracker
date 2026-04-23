@@ -6,32 +6,32 @@ class StorageService {
   static const _tickersKey = 'saved_tickers';
   static const _snapshotsPrefix = 'snapshots_';
   static const _historyPrefix = 'history_';
-  static const _maxSnapshotsPerTicker = 30;
+  static const int _maxSnapshotsPerTicker = 30;
 
   Future<List<String>> getTickers() async {
     final prefs = await SharedPreferences.getInstance();
-    final tickers = prefs.getStringList(_tickersKey);
-    return tickers ?? [];
+    final list = prefs.getStringList(_tickersKey);
+    return list ?? [];
   }
 
-  Future<void> saveTickers(List<String>> tickers) async {
+  Future<void> saveTickers(List<String> list) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_tickersKey, tickers);
+    await prefs.setStringList(_tickersKey, list);
   }
 
   Future<void> addTicker(String ticker) async {
-    final tickers = await getTickers();
+    final list = await getTickers();
     final tickerUpper = ticker.toUpperCase().trim();
-    if (!tickers.contains(tickerUpper) && tickerUpper.isNotEmpty) {
-      tickers.add(tickerUpper);
-      await saveTickers(tickers);
+    if (!list.contains(tickerUpper) && tickerUpper.isNotEmpty) {
+      list.add(tickerUpper);
+      await saveTickers(list);
     }
   }
 
   Future<void> removeTicker(String ticker) async {
-    final tickers = await getTickers();
-    tickers.remove(ticker.toUpperCase());
-    await saveTickers(tickers);
+    final list = await getTickers();
+    list.remove(ticker.toUpperCase());
+    await saveTickers(list);
     await _removeHistory(ticker);
   }
 
@@ -66,7 +66,7 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_historyPrefix${snapshot.ticker.toUpperCase()}';
 
-    StockHistory history = await getHistory(snapshot.ticker) ??
+    final StockHistory history = await getHistory(snapshot.ticker) ??
         StockHistory(ticker: snapshot.ticker, snapshots: []);
 
     history.snapshots.add(snapshot);
@@ -93,25 +93,25 @@ class StorageService {
 
   Future<Map<String, StockSnapshot>> getAllLatestSnapshots() async {
     final tickers = await getTickers();
-    final snapshots = <String, StockSnapshot>{};
+    final result = <String, StockSnapshot>{};
     for (final ticker in tickers) {
       final snapshot = await getLatestSnapshot(ticker);
       if (snapshot != null) {
-        snapshots[ticker] = snapshot;
+        result[ticker] = snapshot;
       }
     }
-    return snapshots;
+    return result;
   }
 
   Future<Map<String, StockHistory>> getAllHistories() async {
     final tickers = await getTickers();
-    final histories = <String, StockHistory>{};
+    final result = <String, StockHistory>{};
     for (final ticker in tickers) {
       final history = await getHistory(ticker);
       if (history != null) {
-        histories[ticker] = history;
+        result[ticker] = history;
       }
     }
-    return histories;
+    return result;
   }
 }
