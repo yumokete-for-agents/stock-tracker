@@ -15,26 +15,11 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-      - name: Create Android
-        run: |
-          cd frontend
-          flutter create --platforms=android --org=com.stocktracker .
-          rm -f test/widget_test.dart
-      - name: Fix versions
-        run: |
-          cd frontend/android
-          sed -i "s/id 'org.jetbrains.kotlin.android' version '1.7.1'/id 'org.jetbrains.kotlin.android' version '1.9.22'/g" settings.gradle
-          echo "kotlin.version=1.9.22" >> gradle.properties
-      - uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-flutter-${{ hashFiles('frontend/pubspec.yaml') }}
-          restore-keys: ${{ runner.os }}-flutter-
-      - name: Install
+      - name: Install deps
         run: cd frontend && flutter pub get
       - name: Tests
         run: cd frontend && flutter test || true
-      - name: Build
+      - name: Build APK
         run: cd frontend && flutter build apk --debug
       - uses: actions/upload-artifact@v4
         with:
@@ -48,11 +33,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
-      - name: Create Android
-        run: |
-          cd frontend
-          flutter create --platforms=android --org=com.stocktracker .
-          rm -f test/widget_test.dart
       - name: Analyze
         run: |
           cd frontend
