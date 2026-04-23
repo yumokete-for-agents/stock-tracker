@@ -15,12 +15,34 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-      - name: Create local.properties
+      - name: Create Android platform
         run: |
-          echo "sdk.dir=$ANDROID_HOME" > frontend/android/local.properties
-          echo "flutter.sdk=$FLUTTER_ROOT" >> frontend/android/local.properties
-          echo "flutter.versionCode=1" >> frontend/android/local.properties
-          echo "flutter.versionName=1.0.0" >> frontend/android/local.properties
+          cd frontend
+          flutter create --platforms=android --org=com.stocktracker .
+      - name: Fix versions
+        run: |
+          cd frontend/android
+          sed -i 's/1.7.1/1.9.22/g' settings.gradle
+          sed -i 's/7.3.0/8.1.0/g' settings.gradle
+          sed -i 's/7.4.2/8.1.0/g' settings.gradle
+          sed -i 's/kotlin_version = .*/kotlin_version = "1.9.22"/g' build.gradle
+          sed -i 's/classpath .com.android.tools.build:gradle:.*/classpath "com.android.tools.build:gradle:8.1.0"/g' build.gradle
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' app/build.gradle
+          sed -i 's/JavaVersion.VERSION_11/JavaVersion.VERSION_17/g' app/build.gradle
+          sed -i 's/jvmTarget = .*/jvmTarget = "17"/g' app/build.gradle
+          sed -i 's/gradle-7.6.1/gradle-8.3/g' gradle/wrapper/gradle-wrapper.properties
+          echo "org.gradle.jvmargs=-Xmx4G" >> gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          echo "kotlin.version=1.9.22" >> gradle.properties
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "flutter.sdk=$FLUTTER_ROOT" >> local.properties
+          rm -f test/widget_test.dart
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-flutter-${{ hashFiles('frontend/pubspec.yaml') }}
+          restore-keys: ${{ runner.os }}-flutter-
       - name: Install deps
         run: cd frontend && flutter pub get
       - name: Tests
@@ -39,6 +61,11 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
+      - name: Create Android platform
+        run: |
+          cd frontend
+          flutter create --platforms=android --org=com.stocktracker .
+          rm -f test/widget_test.dart
       - name: Analyze
         run: |
           cd frontend
