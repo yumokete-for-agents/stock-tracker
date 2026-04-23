@@ -1,28 +1,56 @@
-import 'package:yahoofin/yahoofin.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../models/stock.dart';
 import '../models/stock_fundamentals.dart';
 import '../models/stock_snapshot.dart';
 
 class StockService {
-  final YahooFin _yf = YahooFin();
+  static const String _baseUrl = 'query1.finance.yahoo.com';
+  static const String _apiStr = '/v7/finance/quote';
+
+  Future<Map<String, dynamic>?> _fetchQuoteData(String ticker) async {
+    try {
+      final uri = Uri.https(_baseUrl, _apiStr, {'symbols': ticker});
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => http.Response('{"error": "timeout"}', 408),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final result = decoded['quoteResponse']?['result'];
+        if (result != null && result.isNotEmpty) {
+          return result[0] as Map<String, dynamic>;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching $ticker: $e');
+    }
+    return null;
+  }
 
   Future<Stock> getStockData(String ticker) async {
     try {
       final tickerClean = ticker.toUpperCase().trim();
-      final info = await _yf.getStockInfo(ticker: tickerClean);
+      final data = await _fetchQuoteData(tickerClean);
 
-      final price = await _yf.getPrice(stockInfo: info);
-      final change = await _yf.getPriceChange(stockInfo: info);
-      final volume = await _yf.getVolume(stockInfo: info);
+      if (data == null) {
+        return Stock.empty(tickerClean);
+      }
+
+      final price = (data['regularMarketPrice'] ?? 0.0).toDouble();
+      final change = (data['regularMarketChange'] ?? 0.0).toDouble();
+      final changePercent = (data['regularMarketChangePercent'] ?? 0.0).toDouble();
 
       return Stock(
         ticker: tickerClean,
-        currentPrice: price.currentPrice,
-        change: change.toDouble(),
-        changePercent: (change / (price.currentPrice - change)) * 100,
-        dayHigh: price.dayHigh,
-        dayLow: price.dayLow,
-        volume: volume.regularMarketVolume,
+        currentPrice: price,
+        change: change,
+        changePercent: changePercent,
+        dayHigh: (data['regularMarketDayHigh'] ?? 0.0).toDouble(),
+        dayLow: (data['regularMarketDayLow'] ?? 0.0).toDouble(),
+        volume: data['regularMarketVolume'] ?? 0,
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
@@ -33,26 +61,38 @@ class StockService {
   Future<StockFundamentals> getFundamentals(String ticker) async {
     try {
       final tickerClean = ticker.toUpperCase().trim();
-      final info = await _yf.getStockInfo(ticker: tickerClean);
+      final data = await _fetchQuoteData(tickerClean);
+
+      if (data == null) {
+        return StockFundamentals.empty(tickerClean);
+      }
 
       return StockFundamentals(
         ticker: tickerClean,
-        trailingPE: info.trailingPE,
-        forwardPE: info.forwardPE,
-        priceToBook: info.priceToBookRatio,
-        epsTrailing: info.epsTrailing12Months,
-        epsForward: info.epsForward,
-        marketCap: info.marketCap?.toDouble(),
-        beta: info.beta,
-        dividendYield: info.dividendYield,
-        fiftyTwoWeekHigh: info.fiftyTwoWeekHigh,
-        fiftyTwoWeekLow: info.fiftyTwoWeekLow,
-        avgVolume: info.averageDailyVolume3Month,
+        trailingPE: _toDouble(data['trailingPE']),
+        forwardPE: _toDouble(data['forwardPE']),
+        priceToBook: _toDouble(data['priceToBook']),
+        epsTrailing: _toDouble(data['epsTrailing12Months']),
+        epsForward: _toDouble(data['epsForward']),
+        marketCap: _toDouble(data['marketCap']),
+        beta: _toDouble(data['beta']),
+        dividendYield: _toDouble(data['dividendYield']),
+        fiftyTwoWeekHigh: _toDouble(data['fiftyTwoWeekHigh']),
+        fiftyTwoWeekLow: _toDouble(data['fiftyTwoWeekLow']),
+        avgVolume: data['averageDailyVolume3Month'],
         fetchedAt: DateTime.now(),
       );
     } catch (e) {
       return StockFundamentals.empty(ticker.toUpperCase());
     }
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Future<StockSnapshot> getFullSnapshot(String ticker) async {
