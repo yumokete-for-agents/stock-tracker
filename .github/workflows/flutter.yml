@@ -23,6 +23,11 @@ jobs:
           cd frontend
           flutter create --platforms=android --org=com.stocktracker .
 
+      - name: Fix Kotlin version
+        run: |
+          cd frontend/android
+          sed -i "s/ext.kotlin_version = '1.7.1'/ext.kotlin_version = '1.9.22'/" build.gradle
+
       - name: Cache Flutter dependencies
         uses: actions/cache@v4
         with:
