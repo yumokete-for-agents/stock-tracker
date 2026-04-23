@@ -24,9 +24,9 @@ jobs:
           flutter create --platforms=android --org=com.stocktracker .
           rm -f test/widget_test.dart
 
-      - name: Fix Kotlin version
+      - name: Fix Kotlin version in settings.gradle
         run: |
-          find frontend/android -name "build.gradle" -exec sed -i 's/kotlin_version = .*/kotlin_version = "1.9.22"/g' {} \;
+          sed -i "s/version '1.7.1'/version '1.9.22'/g" frontend/android/settings.gradle
 
       - name: Cache Flutter dependencies
         uses: actions/cache@v4
