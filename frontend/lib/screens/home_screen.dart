@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/stock.dart';
-import '../models/stock_fundamentals.dart';
 import '../models/stock_snapshot.dart';
 import '../services/stock_service.dart';
 import '../services/storage_service.dart';
